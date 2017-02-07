@@ -1,0 +1,11 @@
+commit 126456518cf9809321c43374696173166c94e658
+Author: ambrozhevich <tambrojevich@gmail.com>
+Date:   Tue Feb 7 12:33:46 2017 +0300
+
+    add status.txt
+
+commit 3ca39b7d6b3328df2019a364b21d72a7ce81ed83
+Author: ambrozhevich <tambrojevich@gmail.com>
+Date:   Tue Feb 7 12:17:34 2017 +0300
+
+    add .gitignore
