@@ -244,27 +244,24 @@ function getArticles(skip, top, filterConfig) {
 }
 
 function getArticle(id) {
-    var article;
-    articles.forEach(function (item) {
-        if (item.id == id) {
-            article = item;
-        }
+    var article = articles.find(function (item) {
+        return item.id == id;
     });
     return article;
 }
 
 function validateArticle(article) {
-    if (article.id === '')
+    if (article.id === '' || article.id === undefined)
         return false;
-    if (article.title === '')
+    if (article.title === '' || article.title == undefined || article.title.length >= 100)
         return false;
-    if (article.summary === '')
+    if (article.summary === '' || article.summary == undefined || article.summary.length >= 200)
         return false;
-    if (article.createdAt == null)
+    if (article.createdAt == '' || article.createdAt == undefined)
         return false;
-    if (article.author === '')
+    if (article.author === '' || article.author == undefined)
         return false;
-    if (article.content === '')
+    if (article.content === '' || article.content == undefined)
         return false;
     return true;
 }
@@ -280,6 +277,7 @@ function addArticle(article) {
 function editArticle(id, article) {
     var amendArticle;
     amendArticle = getArticle(id);
+    var index = articles.indexOf(amendArticle);
     if (article.title != null) {
         amendArticle.title = article.title;
     }
@@ -289,7 +287,11 @@ function editArticle(id, article) {
     if (article.content != null) {
         amendArticle.content = article.content;
     }
-    return validateArticle(amendArticle);
+    if (!validateArticle(amendArticle))
+        return false;
+    Object.assign(article, amendArticle)
+    articles[index] = article;
+    return true;
 }
 
 function removeArticle(id) {
@@ -301,5 +303,6 @@ console.log(getArticles(0,10));
 console.log(editArticle(21, {title: "Title", summary: "Summary"}));
 console.log(getArticle(1));
 console.log(articles);
+console.log(getArticle(21));
 console.log(getArticles(2, 4, {author: "Onliner.by"}));
 removeArticle(21);
