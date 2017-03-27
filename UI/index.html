@@ -1,60 +1,107 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<script src="script.js"></script>
-	<meta http-equiv="Content-type" content="text/html; charset=utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=Edge">
-	<title> NewNews</title>
-	<link rel="stylesheet" href="styles.css" type="text/css"> 
-	<link href="https://fonts.googleapis.com/css?family=Caveat+Brush" rel="stylesheet">
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <title> NewNews</title>
+    <link rel="stylesheet" href="styles.css" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Caveat+Brush" rel="stylesheet">
 </head>
 <body>
-	<header>
-		<div class="left-header">
-		<h1>NewNews</h1>
-		</div>
-		<div class="right-header">
-			<div id = "USERNAME"></div>
-			<div id="user">
-				<button class="sign_up btn">Sign up</button>
-				<button class="pink btn">Sign in</button>
-			</div>
-			<div class="add">
-				<button class="add-news btn">Add news</button>
-			</div>
-		</div>
-	</header>	
-		<div class="filter">
-			<input class="menu" type="date" name="bday" style="inline-block">
-			<span class="menu"> 
-				<select>
-					<option selected>Select categories</option> 
-					<option value="art">art</option> 
-					<option value="sport">sport</option> 
-					<option value="politics">politics</option> 
-				</select> 
-			</span>			
-			<span class="menu"> 
+
+<template id="sign-in-form">
+    <form style="margin: auto; background-color: white;" name="signIn" onsubmit="return false;">
+        <input type="text" name="login" placeholder="Login"></input>
+        <input type="password" name="password" placeholder="Password"></input>
+        <center><button type="submit" onclick="ui.closeSignInForm();" class="pink btn">Login</button> </center>
+    </form>
+</template>
+
+<template id="edit-new-form">
+    <form style="margin: auto; background-color: white;" name="edit" onsubmit="return false;">
+        <input type="text" name="image" placeholder="Image url"></input>
+        <textarea type="text" name="title" placeholder="Title"></textarea>
+        <textarea type="text" name="summary" placeholder="Summary"></textarea>
+        <textarea type="text" name="content" placeholder="Content"></textarea>
+        <center><button type="submit" onclick="ui.closeEditForm();" class="pink btn">Change</button></center>
+    </form>
+</template>
+
+<template id="add-new-form">
+    <form style="margin: auto; background-color: white;" name="add" onsubmit="return false;">
+        <input type="text" name="image" placeholder="Image url"></input>
+        <textarea type="text" name="title" placeholder="Title"></textarea>
+        <textarea type="text" name="summary" placeholder="Summary"></textarea>
+        <textarea type="text" name="content" placeholder="Content"></textarea>
+        <center><button type="submit" onclick="ui.closeAddForm();" class="pink btn">Post</button></center>
+    </form>
+</template>
+
+<template id="read-more-form">
+    <form style="margin: auto; background-color: white; width: 50%;" name="read" onsubmit="return false;">
+        <img width="235" height="200" align="left" hspace="10px" src="">
+        <h1></h1>
+        <h2></h2>
+        <p></p>
+    </form>
+</template>
+
+
+<div id="overlay" style="display: none;">
+
+</div>
+
+
+<header>
+    <div class="left-header">
+        <h1>NewNews</h1>
+    </div>
+    <div class="right-header">
+        <div id="user">
+            <div style="display: flex; flex-direction: column">
+            <div style="display: flex">
+            <div id="USERNAME"></div>
+            <button class="pink btn" onclick="ui.openSignInForm()">Sign in</button>
+            <button class="exit" onclick="username = null; functionsService.sign();"> </button>
+            </div></div>
+        <div class="add">
+            <button class="add-news btn" onclick="ui.openAddForm()">Add news</button>
+        </div></div>
+    </div>
+</header>
+<div class="filter">
+    <input class="menu" type="date" name="bday" style="display: inline-block;">
+
+    <span class="menu">
 				<select id="by-author">
 					<option selected>Select author</option> 
 
 				</select> 
-			</span>					
-			<button class="apply btn" > Apply </button>
-		</div>
-		<div class="main-part">
-		<div class= "news">
+			</span>
+    <button class="apply btn" onclick="functionsService.filter();"> Apply</button>
+</div>
+<div class="main-part">
+    <button id="show-prev" class="more prev" onclick="functionsService.show('prev');"><img src="right.png" width="35"
+                                                                                           height="35"></button>
+    <div class="news">
+    </div>
 
-		<button id="show-more" class="more" onclick="functionsService.show();"> <img src="right.png" width="35" height="35"></button>
 
-		</div>
-
-		</div>
-		<div class="footer"> 
-			<div class="newnews"> NewNews </div>
-			<div class="information"> Ambrozhevich Tatsiana, 2 course, 8 group </div>
-			<div class="email"> tambrojevich@gmail.ru </div>
-			<div class="date"> 18.02.2017 </div>					
-		</div>
+    <button id="show-more" class="more" onclick="functionsService.show('next');"><img src="right.png" width="35"
+                                                                                      height="35"></button>
+</div>
+<div style="height: 32px;">
+    <div class="footer">
+        <div class="newnews"> NewNews</div>
+        <div class="information"> Ambrozhevich Tatsiana, 2 course, 8 group</div>
+        <div class="email"> tambrojevich@gmail.ru</div>
+        <div class="date"> 18.02.2017</div>
+    </div>
+</div>
+<script src="script.js"></script>
+<script>
+    functionsService.show();
+    functionsService.sign();
+</script>
 </body>
 </html>
