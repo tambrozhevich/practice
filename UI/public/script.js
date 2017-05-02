@@ -158,7 +158,6 @@ var functionsService = (function () {
             range.skip = Math.max(0, range.skip - 3);
         }
         var elem = articlesService.getArticles(range.skip, range.top, currentFilter);
-
         if (len <= range.skip + range.top) {
             document.querySelector('#show-more').style.display = 'none';
         } else document.querySelector('#show-more').style.display = '';
@@ -330,7 +329,7 @@ var ui = (function () {
             easing: 'ease'
         });
 
-        var article = articlesService.getOne(id);
+        var article = articlesService.getArticle(id);
         document.forms.edit.id = id;
         document.forms.edit.title.value = article.title;
         document.forms.edit.summary.value = article.summary;
@@ -372,7 +371,7 @@ var ui = (function () {
             duration: 200,
             easing: 'ease'
         });
-        var article = articlesService.getOne(id);
+        var article = serverWorker.getArticle(id);
         document.forms.read.querySelector('img').src = article.image;
         document.forms.read.querySelector('h1').innerText = article.title;
         document.forms.read.querySelector('h2').innerText = article.summary;
