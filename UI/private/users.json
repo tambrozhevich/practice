@@ -1,1 +1,15 @@
-{"user":"password","tambrozhevich":"ambr","Yana":"yana","Vladislav":"vladislav"}
+  [{
+    "username":"ta",
+    "password":"123"
+  },
+  {
+    "username": "Yana",
+    "password": "yana"
+  },
+  {
+    "username": "Vladislav",
+    "password": "vladislav"
+  }]
+
+
+
