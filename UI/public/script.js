@@ -1,151 +1,61 @@
-'uses strict';
+'use strict';
 
-let username = null;
+const functionsService = (function () {
 
-
-const articlesService = (function () {
-    function getArticles(skip, top, filterConfig) {
-        skip = skip || 0;
-        top = top || 10;
-        let sortedArticles = serverWorker.getArticles().slice();
-
-        if (filterConfig) {
-            if (filterConfig.author) {
-                sortedArticles = sortedArticles.filter(x => x.author === filterConfig.author);
-            }
-            if (filterConfig.dateFrom) {
-                sortedArticles = sortedArticles.filter(x => x.createdAt >= filterConfig.dateFrom);
-            }
-        }
-        return sortedArticles.splice(skip, top);
-    }
-
-    const validator = {
-        id(id) {
-            return Boolean(id) && typeof (id) === 'string';
-        },
-        title(title) {
-            return Boolean(title) && typeof (title) === 'string' && title.length < 100;
-        },
-        summary(summary) {
-            return Boolean(summary) && typeof (summary) === 'string' && summary.length < 200;
-        },
-        createdAt(createdAt) {
-            return Boolean(createdAt) && createdAt instanceof Date;
-        },
-        author(author) {
-            return Boolean(author) && typeof (author) === 'string';
-        },
-        content(content) {
-            return Boolean(content) && typeof (content) === 'string';
-        },
-    };
-
-    function validateArticle(article) {
-        for (field in validator) {
-            if (!validator[field](article[field])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function addArticle(article) {
-        if (validateArticle(article)) {
-            articles.push(article);
-            return true;
-        } return false;
-    }
-
-    function editArticle(id, article) {
-        let amendArticle;
-        amendArticle = serverWorker.getArticle(id);
-        const index = articles.indexOf(amendArticle);
-        if (article.title != null) {
-            amendArticle.title = article.title;
-        }
-        if (article.summary != null) {
-            amendArticle.summary = article.summary;
-        }
-        if (article.content != null) {
-            amendArticle.content = article.content;
-        }
-        if (!validateArticle(amendArticle)) { return false; }
-        Object.assign(article, amendArticle);
-        articles[index] = article;
-        functionsService.change(articles[index].id, articles[index]);
-        return true;
-    }
-
-    return {
-        getArticles,
-        add: addArticle,
-        edit: editArticle,
-        size() {
-            return serverWorker.getArticles().length;
-        },
-    };
-}());
-
-var functionsService = (function () {
-    const id = 1;
-
-    const range = {
-        skip: 0,
-        top: 3,
-    };
-
-    function addNew(id) {
-        const article = serverWorker.getArticle(id);
-        if (!article) { return false; }
+    function addNew(article, username) {
         const elem = document.createElement('div');
         elem.className = 'new';
-        elem.id = id;
+        elem.id = article._id;
         elem.innerHTML =
             `${article.image ? `<img style="width: 100%; height: 200px; object-fit: cover;" src="${article.image}">` : ''
-            }<h3>${article.title} </h3>` +
+                }<h3>${article.title} </h3>` +
             `<p class="description" > ${article.summary}</p>` +
             '<p class="author"> ' + `Author: ${article.author} </p>` +
-            `<p class="link" href="" onclick="ui.openReadMoreForm(${id});">Read more...</p>` +
+            `<p data-id="${article._id}" class="link" onclick="ui.openReadMoreForm(this.dataset.id);">Read more...</p>` +
             ' <div class="icons">' +
             `<button style="display:${username ? 'inline' : 'none'};" id="${elem.id}" class="icon1" onclick="ui.openEditForm(this.id);"> <img src="change1.png" width="15" height="18"></button>` +
             `<button style="display:${username ? 'inline' : 'none'};" id="${elem.id}" class="icon2" onclick="functionsService.delete(this.id);"> <img src="delete1.png" width="15" height="18"></button>` +
             '</div>';
-        id++;
         elem.style.width = '235px';
         elem.style.height = 'auto';
         return elem;
     }
-    let currentFilter = {};
-    let len = articlesService.size();
+
+    let filter = {};
+    const newsOnPage = 3;
+    let page = 0;
+
     function show(what) {
         const parentElem = document.getElementsByClassName('news')[0];
         parentElem.innerHTML = '';
 
-        if (what === 'next') {
-            range.skip = Math.min(len, range.skip + 3);
-        }
-        if (what === 'prev') {
-            range.skip = Math.max(0, range.skip - 3);
-        }
-        const elem = articlesService.getArticles(range.skip, range.top, currentFilter);
-        if (len <= range.skip + range.top) {
-            document.querySelector('#show-more').style.display = 'none';
-        } else document.querySelector('#show-more').style.display = '';
+        if (what === 'next')
+            page++;
+        if (what === 'prev')
+            page--;
 
-        if (range.skip === 0) {
-            document.querySelector('#show-prev').style.display = 'none';
-        } else document.querySelector('#show-prev').style.display = '';
+        articleService.getArticles({skip: page * newsOnPage, top: newsOnPage, filter}).then(
+            articles => {
+                if (articles.length < 3) {
+                    document.querySelector('#show-more').style.display = 'none';
+                } else document.querySelector('#show-more').style.display = '';
 
-        for (field in elem) {
-            parentElem.appendChild(addNew(elem[field].id));
-        }
+                if (page === 0) {
+                    document.querySelector('#show-prev').style.display = 'none';
+                } else document.querySelector('#show-prev').style.display = '';
+                authorization.isAuthorized().then(
+                    username => articles.forEach(item => parentElem.appendChild(addNew(item, username))),
+                    nonAuthorized => articles.forEach(item => parentElem.appendChild(addNew(item)))
+                );
+            }
+        );
     }
+
     function deleteNew(id) {
-        serverWorker.removeArticle(id);
-        show();
+        articleService.removeArticle(id).then(ready => show());
     }
-    function filter() {
+
+    function makeFilter() {
         let date = document.querySelector('input.menu').value;
         if (!date) date = undefined;
         else date = new Date(date);
@@ -153,59 +63,75 @@ var functionsService = (function () {
         if (!author) author = undefined;
         if (author === 'Select author') author = undefined;
 
-        currentFilter = currentFilter || {};
-        currentFilter.dateFrom = date;
-        currentFilter.author = author;
+        filter = filter || {};
+        filter.createdAt = date;
+        filter.author = author;
 
-        range.skip = 0;
-        len = articlesService.getArticles(0, articlesService.size(), currentFilter).length;
+        page = 0;
         show();
     }
 
 
-    function sign(password) {
-        if (username && users[username] === password) {
-            const button1 = document.querySelector('#user .pink.btn');
-            const button2 = document.querySelector('#user .exit');
-            button1.style.display = 'none';
-            button2.style.display = 'inline';
+    function sign(user) {
+        authorization.logIn(user).then(
+            ready => {
+                document.querySelector('#overlay').style.display = 'none';
+                document.querySelector('#overlay').innerHTML = '';
+                getUsername();
+                functionsService.show();
+            },
+            reject => alert('incorrect')
+        );
+    }
 
-            const userTemp = document.getElementById('USERNAME');
-            userTemp.innerHTML = `<span>${username}</span>`;
-            userTemp.style.display = 'block';
+    function signOut() {
+        authorization.logOut().then(ready => getUsername());
+    }
 
-            const buttons = document.getElementsByClassName('icons');
-            for (let i = 0; i < buttons.length; i++) {
-                buttons.item(i).style.display = 'inline';
+    function getUsername() {
+        authorization.isAuthorized().then(
+            username => {
+                const button1 = document.querySelector('#user .pink.btn');
+                const button2 = document.querySelector('#user .exit');
+                button1.style.display = 'none';
+                button2.style.display = 'inline';
+
+                const userTemp = document.getElementById('USERNAME');
+                userTemp.innerHTML = `<span>${username}</span>`;
+                userTemp.style.display = 'block';
+
+                const buttons = document.getElementsByClassName('icons');
+                for (let i = 0; i < buttons.length; i++) {
+                    buttons.item(i).style.display = 'inline';
+                }
+
+                const add = document.getElementsByClassName('add');
+                add[0].style.display = 'inline';
+
+
+            },
+            nonAuthorized => {
+                const button1 = document.querySelector('#user .pink.btn');
+                const button2 = document.querySelector('#user .exit');
+                button1.style.display = 'inline';
+                button2.style.display = 'none';
+
+                document.getElementById('USERNAME').style.display = 'none';
+
+                const buttons = document.getElementsByClassName('icons');
+                for (let i = 0; i < buttons.length; i++) {
+                    buttons.item(i).style.display = 'none';
+                }
+
+                const add = document.getElementsByClassName('add');
+                add[0].style.display = 'none';
             }
-
-            const add = document.getElementsByClassName('add');
-            add[0].style.display = 'inline';
-            return true;
-        } else if (!username) {
-            const button1 = document.querySelector('#user .pink.btn');
-            const button2 = document.querySelector('#user .exit');
-            button1.style.display = 'inline';
-            button2.style.display = 'none';
-
-            document.getElementById('USERNAME').style.display = 'none';
-
-            const buttons = document.getElementsByClassName('icons');
-            buttons.item(i).style.display = 'none';
-            for (const i = 0; i < buttons.length; i++) {
-            }
-
-            const add = document.getElementsByClassName('add');
-            add[0].style.display = 'none';
-        } else {
-            alert('incorrect');
-        }
-        return false;
+        )
     }
 
     function change(id, article) {
         const result = document.getElementById(article.id);
-        if (result != null) {
+        if (result) {
             const temp = addNew(article);
             result.class = temp.class;
             result.innerHTML = temp.innerHTML;
@@ -232,14 +158,16 @@ var functionsService = (function () {
     }
 
     return {
+        signOut,
         show,
         sign,
-        add: addNew,
+        getUsername,
+        addArticle: addNew,
         addNewElem: addSpecificNew,
         select: formSelection,
         delete: deleteNew,
         change,
-        filter,
+        makeFilter,
     };
 }());
 
@@ -261,13 +189,9 @@ const ui = (function () {
     }
 
     function closeSignInForm() {
-        username = document.forms.signIn.login.value;
+        const username = document.forms.signIn.login.value;
         const password = document.forms.signIn.password.value;
-        if (functionsService.sign(password)) {
-            document.querySelector('#overlay').style.display = 'none';
-            document.querySelector('#overlay').innerHTML = '';
-            functionsService.show();
-        }
+        functionsService.sign({username, password});
     }
 
     function openAddForm() {
@@ -287,22 +211,29 @@ const ui = (function () {
     }
 
     function closeAddForm() {
-        const article = {
-            id: `${new Date().getTime()}`,
-            title: document.forms.add.title.value,
-            summary: document.forms.add.summary.value,
-            createdAt: new Date(),
-            author: username,
-            content: document.forms.add.content.value,
-            image: document.forms.add.image.value,
-        };
-        if (articlesService.add(article)) {
-            document.querySelector('#overlay').innerHTML = '';
-            document.querySelector('#overlay').style.display = 'none';
-            functionsService.show();
-        } else {
-            alert('incorrect');
-        }
+        authorization.isAuthorized().then(
+            username => {
+                const article = {
+                    title: document.forms.add.title.value,
+                    summary: document.forms.add.summary.value,
+                    createdAt: new Date(),
+                    author: username,
+                    content: document.forms.add.content.value,
+                    image: document.forms.add.image.value,
+                };
+                if (articleService.validateArticle(article))
+                    articleService.addArticle(article).then(
+                        ready => {
+                            document.querySelector('#overlay').innerHTML = '';
+                            document.querySelector('#overlay').style.display = 'none';
+                            functionsService.show();
+                        }
+                    );
+                else
+                    alert('incorrect');
+            }
+        );
+
     }
 
     function openEditForm(id) {
@@ -320,31 +251,41 @@ const ui = (function () {
             easing: 'ease',
         });
 
-        const article = articlesService.getArticle(id);
-        document.forms.edit.id = id;
-        document.forms.edit.title.value = article.title;
-        document.forms.edit.summary.value = article.summary;
-        document.forms.edit.content.value = article.content;
-        document.forms.edit.image.value = article.image;
+        articleService.getArticle(id).then(
+            article => {
+                document.forms.edit.id = article._id;
+                document.forms.edit.title.value = article.title;
+                document.forms.edit.summary.value = article.summary;
+                document.forms.edit.content.value = article.content;
+                document.forms.edit.image.value = article.image;
+            }
+        );
     }
 
     function closeEditForm() {
-        const article = {
-            id: document.forms.edit.id,
-            title: document.forms.edit.title.value,
-            summary: document.forms.edit.summary.value,
-            createdAt: new Date(),
-            author: username,
-            content: document.forms.edit.content.value,
-            image: document.forms.edit.image.value,
-        };
-        if (articlesService.edit(article.id, article)) {
-            functionsService.show();
-            document.querySelector('#overlay').innerHTML = '';
-            document.querySelector('#overlay').style.display = 'none';
-        } else {
-            alert('incorrect');
-        }
+        authorization.isAuthorized().then(
+            username => {
+                const article = {
+                    _id: document.forms.edit.id,
+                    title: document.forms.edit.title.value,
+                    summary: document.forms.edit.summary.value,
+                    createdAt: new Date(),
+                    author: username,
+                    content: document.forms.edit.content.value,
+                    image: document.forms.edit.image.value,
+                };
+                if (articleService.validateArticle(article))
+                    articleService.updateArticle(article).then(
+                        ready => {
+                            functionsService.show();
+                            document.querySelector('#overlay').innerHTML = '';
+                            document.querySelector('#overlay').style.display = 'none';
+                        }
+                    );
+                else
+                    alert('incorrect');
+            }
+        );
     }
 
     function openReadMoreForm(id) {
@@ -361,11 +302,14 @@ const ui = (function () {
             duration: 200,
             easing: 'ease',
         });
-        const article = serverWorker.getArticle(id);
-        document.forms.read.querySelector('img').src = article.image;
-        document.forms.read.querySelector('h1').innerText = article.title;
-        document.forms.read.querySelector('h2').innerText = article.summary;
-        document.forms.read.querySelector('p').innerText = article.content;
+        articleService.getArticle(id).then(
+            article => {
+                document.forms.read.querySelector('img').src = article.image;
+                document.forms.read.querySelector('h1').innerText = article.title;
+                document.forms.read.querySelector('h2').innerText = article.summary;
+                document.forms.read.querySelector('p').innerText = article.content;
+            }
+        );
     }
 
     function close() {
@@ -390,3 +334,9 @@ const ui = (function () {
         close,
     };
 }());
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    functionsService.show();
+    functionsService.getUsername();
+});
