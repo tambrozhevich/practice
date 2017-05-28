@@ -1,6 +1,6 @@
 npm install
-запустить mongod
-ввести следующие две строки:
+mongod
+Enter two lines:
 mongoimport --db tanya --collection articles --file articles.json
 mongoimport --db tanya --collection users --file users.json
-затем только запустить node app.js
+node app.js
